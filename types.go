@@ -189,7 +189,7 @@ const (
 
 type PropertyValue struct {
 	Type  PropertyValueType
-	Value float32
+	Value interface{}
 }
 
 type PropertyValueType byte

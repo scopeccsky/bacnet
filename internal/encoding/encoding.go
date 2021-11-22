@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
+	"reflect"
 
 	"github.com/scopeccsky/bacnet"
 )
@@ -47,14 +49,161 @@ func (e *Encoder) ContextUnsigned(tabNumber byte, value uint32) {
 	length := valueLength(value)
 	t := tag{
 		ID:      tabNumber,
-		Context: true,
+		Context: false,
 		Value:   uint32(length),
 		Opening: false,
 		Closing: false,
 	}
 	encodeTag(e.buf, t)
+	log.Printf("unsigned %0 2X \n", e.buf.Bytes())
 	unsigned(e.buf, value)
+	log.Printf("unsigned %0 2X \n", e.buf.Bytes())
 	// binary.Write(e.buf, binary.BigEndian, value)
+}
+
+func (e *Encoder) ContextSigned(tabNumber byte, value int32) {
+	if e.err != nil {
+		return
+	}
+	var length uint32
+	if (value >= -128) && (value < 128) {
+		length = 1
+	} else if (value >= -32768) && (value < 32768) {
+		length = 2
+	} else if (value > -8388608) && (value < 8388608) {
+		length = 3
+	} else {
+		length = 4
+	}
+	t := tag{
+		ID:      tabNumber,
+		Context: true,
+		Value:   length,
+		Opening: false,
+		Closing: false,
+	}
+	encodeTag(e.buf, t)
+	if (value >= -128) && (value < 128) {
+		e.buf.WriteByte(uint8(value))
+	} else if (value >= -32768) && (value < 32768) {
+		binary.Write(e.buf, binary.BigEndian, uint16(value))
+	} else if (value > -8388608) && (value < 8388608) {
+		e.buf.WriteByte(byte(value >> 16))
+		binary.Write(e.buf, binary.BigEndian, uint16(value))
+	} else {
+		binary.Write(e.buf, binary.BigEndian, value)
+	}
+	// binary.Write(e.buf, binary.BigEndian, value)
+}
+
+func (e *Encoder) ContextNull(tabNumber byte) {
+	t := tag{
+		ID:    tabNumber,
+		Value: 1,
+	}
+	encodeTag(e.buf, t)
+}
+
+func (e *Encoder) ContextBoolean(tabNumber byte, value bool) {
+	t := tag{
+		ID:    tabNumber,
+		Value: 1,
+	}
+	encodeTag(e.buf, t)
+	if value {
+		e.buf.WriteByte(1)
+	} else {
+		e.buf.WriteByte(0)
+	}
+}
+
+func (e *Encoder) ContextTypeReal(tabNumber byte, value float32) {
+	t := tag{
+		ID:    tabNumber,
+		Value: 4,
+	}
+	encodeTag(e.buf, t)
+	binary.Write(e.buf, binary.BigEndian, value)
+}
+
+func (e *Encoder) ContextTypeDouble(tabNumber byte, value float32) {
+	t := tag{
+		ID:    tabNumber,
+		Value: 8,
+	}
+	encodeTag(e.buf, t)
+	binary.Write(e.buf, binary.BigEndian, value)
+}
+
+//TODO:长度的逻辑有点问题,tag的context值
+func (e *Encoder) ContextTypeOctetString(tabNumber byte, value string) {
+	len := stringLength(value)
+	t := tag{
+		ID:      tabNumber,
+		Context: true,
+		Value:   1,
+		Opening: false,
+		Closing: false,
+	}
+	encodeTag(e.buf, t)
+
+	if len != 0 {
+		e.buf.WriteString(value)
+	}
+}
+
+//TODO:tag的context值
+func (e *Encoder) ContextTypeTypeCharacterString(tabNumber byte, value string) {
+	len := stringLength(value)
+	t := tag{
+		ID:      tabNumber,
+		Context: true,
+		Value:   1,
+		Opening: false,
+		Closing: false,
+	}
+	encodeTag(e.buf, t)
+
+	if len != 0 {
+		e.buf.WriteString(value)
+	}
+}
+
+//TODO:长度的逻辑有点问题,tag的context值
+func (e *Encoder) ContextTypeTypeBitString(tabNumber byte, value string) {
+	len := stringLength(value)
+	t := tag{
+		ID:      tabNumber,
+		Context: true,
+		Value:   1,
+		Opening: false,
+		Closing: false,
+	}
+	encodeTag(e.buf, t)
+
+	if len != 0 {
+		e.buf.WriteString(value)
+	}
+}
+
+func stringLength(value string) int {
+	if len(value) > 1476 {
+		return 0
+	} else {
+		return len(value)
+	}
+}
+
+func (e *Encoder) ContextTypeEnumerated(tabNumber byte, value uint32) {
+	e.ContextUnsigned(tabNumber, value)
+}
+
+func (e *Encoder) ContextTypeDate(tabNumber byte, value uint32) {
+	//TODO:待完善
+}
+
+func (e *Encoder) ContextTypeTime(tabNumber byte, value uint32) {
+	//TODO:待完善
 }
 
 //ContextObjectID write a (context)tag / value pair where the value
@@ -128,15 +277,68 @@ func (e *Encoder) AppData(v interface{}) {
 	}
 }
 
-func (e *Encoder) ContextAsbtractType(tabNumber byte, v bacnet.PropertyValue) {
+func (e *Encoder) ContextAsbtractType(tabNumber byte, v bacnet.PropertyValue) error {
 	encodeTag(e.buf, tag{ID: tabNumber, Context: true, Opening: true})
-	// length := valueLength(v.Value)
-	length := 4
-	t := tag{ID: byte(v.Type), Value: uint32(length)}
-	encodeTag(e.buf, t)
-	// unsigned(e.buf, v.Value)
-	binary.Write(e.buf, binary.BigEndian, v.Value)
+	switch v.Type {
+	case bacnet.TypeNull:
+		e.ContextNull(byte(v.Type))
+	case bacnet.TypeBoolean:
+		val, ok := v.Value.(bool)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextBoolean(byte(v.Type), val)
+	case bacnet.TypeUnsignedInt:
+		fmt.Println("unsigned")
+		val, ok := v.Value.(uint32)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextUnsigned(byte(v.Type), val)
+	case bacnet.TypeSignedInt:
+		val, ok := v.Value.(int32)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextSigned(byte(v.Type), val)
+	case bacnet.TypeReal:
+		val, ok := v.Value.(float32)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextTypeReal(byte(v.Type), val)
+	case bacnet.TypeDouble:
+		val, ok := v.Value.(float32)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextTypeDouble(byte(v.Type), val)
+	case bacnet.TypeOctetString:
+	case bacnet.TypeCharacterString:
+	case bacnet.TypeBitString:
+	case bacnet.TypeEnumerated:
+		fmt.Println("enum")
+		val, ok := v.Value.(uint32)
+		if !ok {
+			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
+		}
+		e.ContextTypeEnumerated(byte(v.Type), val)
+	case bacnet.TypeDate:
+	case bacnet.TypeTime:
+	case bacnet.TypeObjectID:
+	default:
+		return fmt.Errorf("wrong Type. type:[%d]", v.Type)
+	}
 	encodeTag(e.buf, tag{ID: tabNumber, Context: true, Closing: true})
+	return nil
+	// encodeTag(e.buf, tag{ID: tabNumber, Context: true, Opening: true})
+	// // length := valueLength(v.Value)
+	// length := 4
+	// t := tag{ID: byte(v.Type), Value: uint32(length)}
+	// encodeTag(e.buf, t)
+	// // unsigned(e.buf, v.Value)
+	// binary.Write(e.buf, binary.BigEndian, v.Value)
+	// encodeTag(e.buf, tag{ID: tabNumber, Context: true, Closing: true})
 }
 
 // valueLength caclulates how large the necessary value needs to be to fit in the appropriate
