@@ -320,7 +320,6 @@ func (c *Client) WriteProperty(ctx context.Context, device bacnet.Device, writeP
 	defer c.transactions.StopTransaction(invokeID)
 	_, err := c.send(npdu)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -354,7 +353,7 @@ func (c *Client) send(npdu NPDU) (int, error) {
 	}
 	addr := bacnet.UDPFromAddress(*npdu.Destination)
 
-	fmt.Printf("bytes %0 2x\n", bytes)
+	log.Printf("bytes %0 2x\n", bytes)
 	return c.udp.WriteToUDP(bytes, &addr)
 
 }

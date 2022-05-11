@@ -85,7 +85,6 @@ func (npdu NPDU) MarshalBinary() ([]byte, error) {
 		}
 	}
 	bytes := b.Bytes()
-	fmt.Printf("npdu %0 2x \n", bytes)
 	if npdu.ADPU != nil {
 		bytesapdu, err := npdu.ADPU.MarshalBinary()
 		if err != nil {
@@ -284,6 +283,7 @@ func (apdu APDU) MarshalBinary() ([]byte, error) {
 		b.WriteByte(5) //Todo: Write other  control flag here
 		b.WriteByte(apdu.InvokeID)
 	}
+
 	b.WriteByte(byte(apdu.ServiceType))
 	bytes, err := apdu.Payload.MarshalBinary()
 	if err != nil {

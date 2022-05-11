@@ -26,7 +26,15 @@ func TestFullEncodingAndCoherency(t *testing.T) {
 					ADPU: &APDU{
 						DataType:    UnconfirmedServiceRequest,
 						ServiceType: ServiceUnconfirmedWhoIs,
-						Payload:     &WhoIs{},
+						Payload: &ReadProperty{
+							ObjectID: bacnet.ObjectID{
+								Type:     bacnet.AnalogInput,
+								Instance: 300184,
+							},
+							Property: bacnet.PropertyIdentifier{
+								Type: bacnet.PresentValue,
+							},
+						},
 					},
 				},
 			},

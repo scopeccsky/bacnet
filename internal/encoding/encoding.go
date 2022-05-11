@@ -49,7 +49,7 @@ func (e *Encoder) ContextUnsigned(tabNumber byte, value uint32) {
 	length := valueLength(value)
 	t := tag{
 		ID:      tabNumber,
-		Context: false,
+		Context: true,
 		Value:   uint32(length),
 		Opening: false,
 		Closing: false,
@@ -289,7 +289,6 @@ func (e *Encoder) ContextAsbtractType(tabNumber byte, v bacnet.PropertyValue) er
 		}
 		e.ContextBoolean(byte(v.Type), val)
 	case bacnet.TypeUnsignedInt:
-		fmt.Println("unsigned")
 		val, ok := v.Value.(uint32)
 		if !ok {
 			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())
@@ -317,7 +316,6 @@ func (e *Encoder) ContextAsbtractType(tabNumber byte, v bacnet.PropertyValue) er
 	case bacnet.TypeCharacterString:
 	case bacnet.TypeBitString:
 	case bacnet.TypeEnumerated:
-		fmt.Println("enum")
 		val, ok := v.Value.(uint32)
 		if !ok {
 			return fmt.Errorf("wrong value, value:[%v]", reflect.ValueOf(v.Value).Type())

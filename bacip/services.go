@@ -75,6 +75,7 @@ type ReadProperty struct {
 }
 
 func (rp ReadProperty) MarshalBinary() ([]byte, error) {
+
 	encoder := encoding.NewEncoder()
 	encoder.ContextObjectID(0, rp.ObjectID)
 	encoder.ContextUnsigned(1, uint32(rp.Property.Type))
