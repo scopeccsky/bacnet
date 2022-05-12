@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/scopeccsky/bacnet"
@@ -55,9 +54,7 @@ func (e *Encoder) ContextUnsigned(tabNumber byte, value uint32) {
 		Closing: false,
 	}
 	encodeTag(e.buf, t)
-	log.Printf("unsigned %0 2X \n", e.buf.Bytes())
 	unsigned(e.buf, value)
-	log.Printf("unsigned %0 2X \n", e.buf.Bytes())
 	// binary.Write(e.buf, binary.BigEndian, value)
 }
 
@@ -195,7 +192,19 @@ func stringLength(value string) int {
 }
 
 func (e *Encoder) ContextTypeEnumerated(tabNumber byte, value uint32) {
-	e.ContextUnsigned(tabNumber, value)
+	if e.err != nil {
+		return
+	}
+	length := valueLength(value)
+	t := tag{
+		ID:      tabNumber,
+		Context: false,
+		Value:   uint32(length),
+		Opening: false,
+		Closing: false,
+	}
+	encodeTag(e.buf, t)
+	unsigned(e.buf, value)
 }
 
 func (e *Encoder) ContextTypeDate(tabNumber byte, value uint32) {

@@ -3,7 +3,6 @@ package bacip
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/scopeccsky/bacnet"
 	"github.com/scopeccsky/bacnet/internal/encoding"
@@ -125,7 +124,6 @@ func (wp WriteProperty) MarshalBinary() ([]byte, error) {
 	if wp.Priority != 0 {
 		encoder.ContextUnsigned(4, uint32(wp.Priority))
 	}
-	log.Printf("write  %0 2x\n", encoder.Bytes())
 	return encoder.Bytes(), encoder.Error()
 }
 

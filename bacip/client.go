@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -143,7 +142,6 @@ func (c *Client) handleMessage(src *net.UDPAddr, b []byte) error {
 		c.subscriptions.f(bvlc, *src)
 	}
 	c.subscriptions.RUnlock()
-	log.Printf("invokeID  %d, apdu.Datatype %02x", bvlc.NPDU.ADPU.InvokeID, apdu.DataType)
 	if apdu.DataType == ComplexAck || apdu.DataType == SimpleAck || apdu.DataType == Error {
 		invokeID := bvlc.NPDU.ADPU.InvokeID
 		tx, ok := c.transactions.GetTransaction(invokeID)
@@ -295,7 +293,6 @@ func (c *Client) ReadProperty(ctx context.Context, device bacnet.Device, readPro
 
 func (c *Client) WriteProperty(ctx context.Context, device bacnet.Device, writeProp WriteProperty) error {
 	invokeID := c.transactions.GetID()
-	log.Println("invokeID ", invokeID)
 	defer c.transactions.FreeID(invokeID)
 	npdu := NPDU{
 		Version:               Version1,
@@ -353,7 +350,6 @@ func (c *Client) send(npdu NPDU) (int, error) {
 	}
 	addr := bacnet.UDPFromAddress(*npdu.Destination)
 
-	log.Printf("bytes %0 2x\n", bytes)
 	return c.udp.WriteToUDP(bytes, &addr)
 
 }
