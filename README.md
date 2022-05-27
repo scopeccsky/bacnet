@@ -1,6 +1,7 @@
 # Bacnet
 
 一个基于go的bacnet/ip库，无其他依赖
+在https://github.com/REQUEA/bacnet 库基础上修改而来， 可以参照原库的main里面的demo
 
 # 实现功能
 - Who Is
