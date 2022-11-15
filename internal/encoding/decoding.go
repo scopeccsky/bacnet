@@ -227,7 +227,8 @@ func (d *Decoder) AppData(v interface{}) {
 			return
 		}
 		rv.Set(reflect.ValueOf(obj))
-
+	case applicationTagBoolean:
+		rv.Set(reflect.ValueOf(tag.Value != 0))
 	default:
 		//TODO: support all app data types
 		d.err = fmt.Errorf("decodeAppData: unsupported type 0x%x", tag.ID)

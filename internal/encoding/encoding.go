@@ -102,16 +102,15 @@ func (e *Encoder) ContextNull(tabNumber byte) {
 }
 
 func (e *Encoder) ContextBoolean(tabNumber byte, value bool) {
+	var i uint32
+	if value {
+		i = 1
+	}
 	t := tag{
 		ID:    tabNumber,
-		Value: 1,
+		Value: i,
 	}
 	encodeTag(e.buf, t)
-	if value {
-		e.buf.WriteByte(1)
-	} else {
-		e.buf.WriteByte(0)
-	}
 }
 
 func (e *Encoder) ContextTypeReal(tabNumber byte, value float32) {
